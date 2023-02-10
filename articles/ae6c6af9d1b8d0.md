@@ -44,7 +44,20 @@ protectedProcedure.query(({ ctx }) => ctx.user);
 
 ## Reactでもやってみる
 
-Reactで同様なことをするためのライブラリを書いてみました。以下のように使えます。ミドルウェアコンポーネントが、tRPCのプロシージャに対応します。
+Reactでコンポーネントの表示の前に何かを実行するためには、例えばpropsやchildrenにコンポーネントを渡す方法があります。しかし、このやり方でミドルウェアからコンポーネントに値を渡すためには、render propをする必要があります。
+
+そうすると、複数のミドルウェアを使うと可読性が落ちたり、型を書くのが面倒だったりします。
+
+```tsx
+// propsやchildrenにコンポーネントを渡す
+<ProtectedRoute page={Profile} />
+<RequireAuth><Profile /></RequireAuth>
+
+// 値を渡すためにはrender propで書く必要がある
+<ProtectedRoute component={(user) => <Profile user={user} />} />
+```
+
+そのため、ReactでもtRPC風にミドルウェアを書けるライブラリを作ってみました。以下のように使えます。
 
 ```tsx:src/middleware.tsx
 import { Navigate } from "react-router-dom";
@@ -74,7 +87,7 @@ const ensureLoggedIn = createMiddleware(({ ctx, next }) => {
   return next({ user: ctx.userState.user });
 });
 
-// ミドルウェアコンポーネントを作成する
+// ミドルウェアコンポーネント（tRPCのprocedureに対応）を作成する
 export const AuthMiddleware = MiddlewareComponent.use(ensureLoggedIn);
 export const AdminMiddleware = AuthMiddleware.use(({ ctx, next }) => {
   if (ctx.user.type !== "admin") return <Unauthorized />;
@@ -101,9 +114,9 @@ export const Admin = () => {
 };
 ```
 
-## 実装
+## ライブラリの実装の詳細
 
-用語を整理します。
+まず、用語を整理します。
 
 | 用語                       | 定義                                                                                             |
 | -------------------------- | ------------------------------------------------------------------------------------------------ |
@@ -111,7 +124,7 @@ export const Admin = () => {
 | ミドルウェア               | コンポーネントを表示するか、次のミドルウェアを実行するもの                                           |
 | ミドルウェアコンポーネント | ミドルウェアを持つコンポーネント。表示されるときに、持っているミドルウェアを順番に実行していく。 |
 
-コアの部分の実装は以下です。ミドルウェアコンポーネントは、最初に受け取るコンテキストの型（`TInputContext`）と、全てのミドルウェアを通過した後のコンテキストの型（`TOutputContext`）をもっています。`use`の引数をもとに`TOutputContext`を変化させています。
+コアの部分の実装は以下です。ミドルウェアコンポーネントは、最初に受け取るコンテキストの型（`TInputContext`）と、全てのミドルウェアを通過した後のコンテキストの型（`TOutputContext`）をもっています。`use`では、引数のミドルウェアの型をもとに`TOutputContext`を変化させています。
 
 ```ts
 function createMiddlewareComponent<TInputContext, TOutputContext = TInputContext>(
@@ -260,7 +273,7 @@ export const Admin = () => {
 };
 ```
 
-これで動くようになりました。しかし、コンポーネントを2つ書くのが少し冗長なので、ユーティリティ作って解消します。
+これで動くようになりました。しかし、ページ側にコンポーネントを2つ書くのが少し冗長なので、ユーティリティ作って解消します。
 
 ```ts:src/middleware.tsx
 import { initMiddleware, MiddlewareComponent as IMiddlewareComponent } from "./lib/react-middleware";
@@ -317,9 +330,7 @@ https://github.com/tekihei2317/react-middleware-poc/tree/main/examples/react-rou
 
 tRPCのミドルウェアの型のつけ方が気になっていたので、理解できてよかったです。TypeScriptの勉強にもなりました。
 
-実用性は、静的に型を解決することにメリットがある場合はありそうです。例えば、ユーザーにロールが複数ある場合は、型を絞り込めなさそうなので使いにくかなと思いました。
-
-また、ページコンポーネントのpropsとして受け取らなくていい場合は、単純にchildrenでコンポーネントを合成すればよいと思います（`<RequireAuth><Page /><RequireAuth />`や、`<ProtectedRoute page={Page} />`など）。
+実用性は、静的に型を解決することにメリットがある場合はありそうです。例えば、ユーザーにロールが複数ある場合は、型を絞り込めなさそうなので使いにくいかなと思いました。
 
 ## 参考
 
