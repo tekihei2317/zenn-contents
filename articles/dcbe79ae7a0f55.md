@@ -52,7 +52,7 @@ D1にアクセスするためには、Remixのloader/actionを使う必要があ
 
 https://github.com/tekihei2317/type-challenges-judge/pull/16
 
-Cloudflareにデプロイする場合は、必要なパッケージやファイルの中身にマイグレーションガイドと違いがあります。そのため、create-remixでCloudflare Pagesを選んで作ったプロジェクトも参考にしました。
+Cloudflareにデプロイする場合は、必要なパッケージやファイルの中身にマイグレーションガイドと異なる点があります。そのため、create-remixでCloudflare Pagesを選んで作ったプロジェクトを参考にしました。
 
 ### 既存のプロジェクトにRemixを追加して動かす
 
@@ -71,7 +71,7 @@ yarn add -D @remix-run/dev wrangler @cloudflare/workers-types
 - `app/root.tsx`
 - `remix.config.js`
 
-マイグレーションガイドでは`root.tsx`に`<Script />`が書かれていないのですが、これがないとReactが動かないので注意が必要です。
+マイグレーションガイドでは`root.tsx`に`<Script />`が書かれていなかったのですが、これがないとReactが動かないので注意が必要です。
 
 そして、package.jsonのスクリプトを変更して、`yarn run dev`でRemixが動作することを確認しました。
 
@@ -87,13 +87,13 @@ yarn add -D @remix-run/dev wrangler @cloudflare/workers-types
 
 ### 既存のコードを移植する
 
-次に、既存のコードがRemixで動くようにしました。Remixのコードは`app/`ディレクトリに入れるので、まずは`src/`ディレクトリの中身を`app/`ディレクトリに移動しました。
+次に、既存のコードをRemixで動くように変更しました。Remixのコードは`app/`ディレクトリに入れるので、まずは`src/`ディレクトリの中身を`app/`ディレクトリに移動しました。
 
-それから、ページコンポーネントのファイル名をRemixの規約に合わせて変更しました。Remixは、Next.jsなどのフレームワークと同じように、ファイルシステムベースのルーティングを採用しています。URLの階層を、ディレクトリではなくファイル名を`.`で区切って表すのが特徴です。
+それから、ページコンポーネントのファイル名をRemixの規約に合わせて変更しました。Remixは、Next.jsなどのフレームワークと同じように、ファイルシステムベースのルーティングを採用しています。URLの階層を、ディレクトリではなくファイル名の`.`区切りで表すのが特徴です。
 
 [Route File Naming (v2) | Remix](https://remix.run/docs/en/main/file-conventions/route-files-v2)
 
-その後、主に次の2つの変更をするとローカル環境でアプリケーションが動作するようになりました。
+その後、主に次の2つの変更をすると、ローカル環境でアプリケーションが動作するようになりました。
 
 - コンポーネントをデフォルトエクスポートに変更する
 - `react-router-dom`を`@remix-run/react`に変更する
@@ -120,7 +120,7 @@ Type Challenges Judgeには、主にユーザー・問題・提出という3つ�
 
 ### シードの作成
 
-次に、初期データを登録するスクリプトを書きました。少し詰まったのは、スクリプトからD1へアクセスする方法です。D1にはWorkerからアクセスする必要があるので、スクリプトからWorkerを起動する必要がありました。
+次に、初期データを登録するスクリプトを書きました。少し詰まったのは、スクリプトからD1へアクセスする方法です。D1にはWorkerからアクセスする必要があるので、スクリプトからWorkerを呼ぶ必要がありました。
 
 [cloudflare/wildebeest](https://github.com/cloudflare/wildebeest/tree/main)を見てみると、`wrangler`の`unstable_dev`を使っていたので、その方法でやってみると出来ました。
 
@@ -149,9 +149,9 @@ sqlcを使う場合の注意点は、データベースのカラムをスネー�
 
 https://github.com/orisano/sqlc-gen-ts-d1/issues/1
 
-具体的には、`select * from user`の実際の結果の型が`{ userId: string }[]`だとしても、sqlc側でそれに合わせる方法がないということです。
+つまり、`select * from user`の実際の結果の型が`{ userId: string }[]`だとしても、sqlc側でそれに合わせた型を生成することができません。
 
-スネークケースからキャメルケースへの変換`sqlc-gen-ts-d1`で行ってくれるため、アプリケーション側では通常通りキャメルケースで扱えます。
+スネークケースからキャメルケースへの変換は`sqlc-gen-ts-d1`が行ってくれるため、アプリケーション側ではキャメルケースで扱えます。
 
 ### データの移行
 
@@ -162,7 +162,7 @@ https://github.com/orisano/sqlc-gen-ts-d1/issues/1
 - ローカルのDBをダンプして、`wrangler d1 execute`で本番DBに書き込む
 
 
-データの件数は少なかったため、問題なく移行できました。
+データの件数は少なかったため（< 1000行）、問題なく移行できました。
 
 ```text
 exported 34 users # ユーザー
@@ -170,17 +170,31 @@ exported 343 submissions # 提出
 exported 232 problem results # 挑戦結果
 ```
 
+## （進行中）判定処理をCloud FunctionsからCloudflare Workersに移行する
+
+https://github.com/tekihei2317/type-challenges-judge/pull/19
+
+回答の判定処理では、TypeScript Compiler APIを使ってコードをコンパイルして、エラーメッセージを取得します。
+
+既存の判定処理はCloud Functions for Firestoreで実行しており、ファイルシステムに依存する処理でした。Cloudflare Workersではfsが使えないため、インメモリで処理するように書き換える必要がありました。
+
+インメモリでのコンパイルは、次の記事を参考にCompiler Hostを書き換えるとできました。
+
+https://zenn.dev/steelydylan/articles/mosyatc-development
+
+ローカルでは動作するようになったものの、Cloudflare Pagesにデプロイするときにエラーになってしまいました。TypeScriptをバンドルに含んだため、Pages Functionsの制限に引っかかってしまったようです。
+
+![pages-functions-publish-failed](/images/pages-functions-publish-failed.png)
+
+そのため、判定処理のワーカー（とキュー）を別で作成して実行しようと思っています。
+
 ## これからすること
 
-- 判定処理がまだ移行できていないので移行する（Cloudflare Workersでtscを動かすのに詰まっている）
-- ランキング機能があると良さそうなので、実装する
-- テストを書いてみる
-
-あたりをやる予定です。
+ランキング機能があると面白そうなので、判定処理の実装が終わったら作ってみる予定です。また、テストを全く書いていないので、まずはデータ取得の処理のテストから書いてみようと思っています。
 
 ## 感想
 
-Remix + Cloudflare D1は、可能性を感じる技術スタックでした。規模が小さい場合はリレーショナルデータベースを無料で運用できるので、個人開発に向いていそうです。
+Remix + Cloudflare D1は、可能性を感じる技術スタックでした。規模が小さい場合はリレーショナルデータベースを無料で運用できるので、個人開発の1つの選択肢になりそうです。
 
 Node.jsのライブラリで動かないものがあることと、現時点ではD1のトランザクションがサポートされていない点は注意が必要です。
 
