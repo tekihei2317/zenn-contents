@@ -3,7 +3,7 @@ title: "個人開発アプリをRemix + Cloudflare D1に移行してみた"
 emoji: "⚡"
 type: "tech"
 topics: ["remix", "cloudflare", "d1", "sqlc", "blessingsoftware夏のブログリレー"]
-published: false
+published: true
 publication_name: "bs_kansai"
 ---
 
@@ -11,7 +11,7 @@ publication_name: "bs_kansai"
 
 昨日はasukaさん([@a_skua](https://twitter.com/a_skua))の「[Flutterを用いたWeb開発の今後について考える](https://zenn.dev/bs_kansai/articles/e5d7ad28baab59)」が公開されました。
 
-次回はKanonさん([@samurai_se](https://twitter.com/samurai_se))の「ブログリレーを主催してみた結果」が公開される予定です！お楽しみに！
+次回はKanonさん([@samurai_se](https://twitter.com/samurai_se))の「ブログリレーを主催してみた結果」が公開される予定です！
 
 ## はじめに
 
@@ -42,7 +42,7 @@ Type Challenges Judgeはアプリの規模があまり大きくなく、新し�
 - FirestoreからCloudflare D1に移行する
 - （進行中）判定処理をCloud FunctionsからCloudflare Workersに移行する
 
-D1にアクセスするためには、Remixのloader/actionを使う必要がありそうだったので、Remixへの移行を先に行うことにしました。
+D1にアクセスするためには、Remixのloader/actionを使う必要がありそうだったので、最初にRemixへの移行を行うことにしました。
 
 ## React RouterからRemixに移行する
 
@@ -176,13 +176,13 @@ https://github.com/tekihei2317/type-challenges-judge/pull/19
 
 回答の判定処理では、TypeScript Compiler APIを使ってコードをコンパイルして、エラーメッセージを取得します。
 
-既存の判定処理はCloud Functions for Firestoreで実行しており、ファイルシステムに依存する処理でした。Cloudflare Workersではfsが使えないため、インメモリで処理するように書き換える必要がありました。
+既存の判定処理はCloud Functions for Firestoreで実行しており、ファイルシステムに依存していました。Cloudflare Workersではfsが使えないため、インメモリで処理するように書き換える必要があります。
 
-インメモリでのコンパイルは、次の記事を参考にCompiler Hostを書き換えるとできました。
+インメモリでのコンパイルは、次の記事を参考にCompiler Hostを書き換えて行いました。
 
 https://zenn.dev/steelydylan/articles/mosyatc-development
 
-ローカルでは動作するようになったものの、Cloudflare Pagesにデプロイするときにエラーになってしまいました。TypeScriptをバンドルに含んだため、Pages Functionsの制限に引っかかってしまったようです。
+これでローカルでは動作するようになったものの、Cloudflare Pagesにデプロイするときにエラーになってしまいました。TypeScriptをバンドルに含んだためサイズが大きくなり、Pages Functionsの制限に引っかかってしまったようです。
 
 ![pages-functions-publish-failed](/images/pages-functions-publish-failed.png)
 
@@ -190,7 +190,9 @@ https://zenn.dev/steelydylan/articles/mosyatc-development
 
 ## これからすること
 
-ランキング機能があると面白そうなので、判定処理の実装が終わったら作ってみる予定です。また、テストを全く書いていないので、まずはデータ取得の処理のテストから書いてみようと思っています。
+ランキング機能があると面白そうなので、判定処理の実装が終わったら作ってみる予定です。
+
+また、テストを全く書いていなかったり、パッケージが1年前から塩漬けになっていたりするので、その辺りも少しずつ改善できればと思っています。
 
 ## 感想
 
