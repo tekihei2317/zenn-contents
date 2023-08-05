@@ -7,11 +7,11 @@ published: true
 publication_name: "bs_kansai"
 ---
 
-この記事は『blessing software 夏のブログリレー企画』の5日目の記事です。
+この記事は『[blessing software 夏のブログリレー企画](https://zenn.dev/yskn_sid25/scraps/97c184154eb2a9)』の5日目の記事です。
 
 昨日はasukaさん([@a_skua](https://twitter.com/a_skua))の「[Flutterを用いたWeb開発の今後について考える](https://zenn.dev/bs_kansai/articles/e5d7ad28baab59)」が公開されました。
 
-次回はKanonさん([@samurai_se](https://twitter.com/samurai_se))の「ブログリレーを主催してみた結果」が公開される予定です！
+次回はKanonさん([@samurai_se](https://twitter.com/samurai_se))の「[私がエンジニア勉強会を作り、ブログリレーを主催するまで](https://zenn.dev/bs_kansai/articles/ec124795cf0f48)」です！
 
 ## はじめに
 
